@@ -21,5 +21,14 @@ node_modules/
 *.sln
 *.sw?
 
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+
 # OS specific
 .DS_Store

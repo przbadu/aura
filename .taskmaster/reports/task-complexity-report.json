@@ -1,0 +1,133 @@
+{
+	"meta": {
+		"generatedAt": "2026-03-10T15:23:37.854Z",
+		"tasksAnalyzed": 15,
+		"totalTasks": 15,
+		"analysisCount": 15,
+		"thresholdScore": 5,
+		"projectName": "Taskmaster",
+		"usedResearch": true
+	},
+	"complexityAnalysis": [
+		{
+			"taskId": 1,
+			"taskTitle": "Initialize Next.js 15 Frontend with TypeScript, Tailwind CSS v4, and shadcn/ui",
+			"complexityScore": 4,
+			"recommendedSubtasks": 5,
+			"expansionPrompt": "Break down the Next.js 15 frontend initialization into: 1) Creating the Next.js app with create-next-app and basic configuration, 2) Configuring Tailwind CSS v4 with CSS variables for theming, 3) Initializing shadcn/ui and installing core components, 4) Setting up the directory structure and TypeScript path aliases, 5) Creating the root layout with font loading and basic styles. Each subtask should include verification steps.",
+			"reasoning": "This is a standard project initialization task using well-documented tools (create-next-app, shadcn CLI). The complexity is moderate because: Tailwind v4 has different configuration patterns than v3, shadcn/ui requires specific setup choices, and the directory structure needs careful planning for future features. All steps are well-documented with clear CLI commands. No existing code to integrate with."
+		},
+		{
+			"taskId": 2,
+			"taskTitle": "Initialize FastAPI Backend with Project Structure and Core Configuration",
+			"complexityScore": 3,
+			"recommendedSubtasks": 4,
+			"expansionPrompt": "Break down the FastAPI backend initialization into: 1) Creating project directory structure and Python virtual environment with pyproject.toml, 2) Setting up FastAPI app with CORS middleware and health endpoint, 3) Implementing Pydantic Settings for environment variable configuration, 4) Creating Dockerfile and .env.example for deployment. Include verification that the server starts and health endpoint responds correctly.",
+			"reasoning": "Straightforward FastAPI project setup with standard patterns. The task uses modern Python packaging (pyproject.toml), Pydantic v2 settings, and basic FastAPI middleware. All components are well-documented. Lower complexity than frontend because there are fewer tooling decisions and the structure is more standardized."
+		},
+		{
+			"taskId": 3,
+			"taskTitle": "Create Supabase Database Schema with Migrations and RLS Policies",
+			"complexityScore": 6,
+			"recommendedSubtasks": 6,
+			"expansionPrompt": "Break down the Supabase schema creation into: 1) Initialize Supabase local development and create migration file, 2) Create threads and messages tables with indexes and foreign keys, 3) Create skills and skill_files tables with unique constraints and validation, 4) Create code_executions and sandbox_files tables, 5) Implement comprehensive RLS policies for all tables including global skills visibility, 6) Create updated_at triggers and Supabase Storage buckets with policies. Each subtask should include SQL verification queries.",
+			"reasoning": "Database schema design requires careful planning for security (RLS), performance (indexes), and data integrity (constraints). The skills table has complex uniqueness requirements (name unique per user OR global). RLS policies need special handling for global skills (user_id IS NULL). Multiple tables with interrelated foreign keys. Storage bucket policies add another layer of complexity."
+		},
+		{
+			"taskId": 4,
+			"taskTitle": "Implement Theme System and App Shell Layout with Navigation",
+			"complexityScore": 5,
+			"recommendedSubtasks": 5,
+			"expansionPrompt": "Break down the theme system and layout into: 1) Configure next-themes provider with system/light/dark support and CSS variables, 2) Create comprehensive CSS variables for all theme tokens in globals.css, 3) Build the theme toggle component with dropdown menu, 4) Create the responsive sidebar navigation with active states, 5) Build the app shell layout combining sidebar, mobile nav, and main content area. Each subtask should include responsive testing verification.",
+			"reasoning": "This task combines UI architecture (app shell pattern), state management (theme persistence), and responsive design. The sidebar needs to handle navigation state, collapse on mobile, and integrate with Next.js App Router. The CSS variable system needs careful design to work with shadcn/ui components. Depends on Task 1 being complete."
+		},
+		{
+			"taskId": 5,
+			"taskTitle": "Set Up Supabase Client Integration with Authentication Flow",
+			"complexityScore": 6,
+			"recommendedSubtasks": 6,
+			"expansionPrompt": "Break down Supabase auth integration into: 1) Create Supabase browser client using @supabase/ssr with proper cookie handling, 2) Create Supabase server client for Server Components and Actions, 3) Implement Next.js middleware for protected route authentication, 4) Create login and signup pages with form validation using React Hook Form + Zod, 5) Implement sign in/sign up server actions with proper error handling, 6) Create backend auth middleware to verify JWT tokens and extract user. Each subtask should include auth flow testing.",
+			"reasoning": "Authentication is security-critical and involves multiple layers: browser client, server client, middleware, backend verification. The @supabase/ssr package requires careful cookie management. Server Actions need proper error handling. Backend JWT verification requires understanding Supabase token structure. Cross-cutting concern affecting both frontend and backend."
+		},
+		{
+			"taskId": 6,
+			"taskTitle": "Build Chat Backend with LLM Integration and SSE Streaming",
+			"complexityScore": 7,
+			"recommendedSubtasks": 7,
+			"expansionPrompt": "Break down the chat backend into: 1) Create LLM service wrapper for Anthropic Claude with streaming support, 2) Create thread service with CRUD operations for conversation management, 3) Build message service for persisting user and assistant messages, 4) Implement SSE chat endpoint with event generator pattern, 5) Create thread management REST endpoints (list, create, update, delete), 6) Integrate message persistence into the streaming flow, 7) Handle error cases and implement proper cleanup. Each subtask should include API testing with curl/httpx.",
+			"reasoning": "This is the core feature requiring integration of multiple complex systems: LLM API with streaming, SSE event formatting, database persistence during streams, proper async patterns. The streaming flow must handle: creating messages, loading history, streaming responses, and saving results atomically. Error handling in streaming contexts is nuanced. High dependency surface area."
+		},
+		{
+			"taskId": 7,
+			"taskTitle": "Build Chat Frontend Interface with Thread Management and Message Streaming",
+			"complexityScore": 7,
+			"recommendedSubtasks": 8,
+			"expansionPrompt": "Break down the chat frontend into: 1) Create Zustand store for chat state with threads, messages, and streaming state, 2) Build thread sidebar with search, create, rename, and delete functionality, 3) Implement message list component with auto-scroll and date grouping, 4) Create message bubble component with user/assistant styling differentiation, 5) Build markdown renderer with syntax highlighting and code copy, 6) Create message input with auto-resize and keyboard handling, 7) Implement SSE client hook for streaming message consumption, 8) Integrate all components in the chat page layout. Include end-to-end streaming tests.",
+			"reasoning": "Complex frontend feature combining real-time streaming, state management, and rich text rendering. The SSE client needs proper cleanup and reconnection handling. Markdown rendering with syntax highlighting requires multiple libraries. Message list needs performance optimization for long conversations. Multiple UI states: loading, streaming, error. High interaction complexity."
+		},
+		{
+			"taskId": 8,
+			"taskTitle": "Implement Skills CRUD API and System Prompt Builder with Skill Discovery",
+			"complexityScore": 7,
+			"recommendedSubtasks": 7,
+			"expansionPrompt": "Break down the skills backend into: 1) Create Pydantic models for skill validation with regex name validation, 2) Implement skills service with CRUD operations and ownership checks, 3) Build skills REST router with all endpoints including share toggle, 4) Create system prompt builder that injects skill catalog as markdown table, 5) Implement load_skill LLM tool with file listing in response, 6) Implement save_skill LLM tool for AI-guided skill creation, 7) Integrate skill tools into the chat flow with proper tool execution handling. Include integration tests for skill discovery in conversations.",
+			"reasoning": "This task extends the chat system significantly by adding tool support. The system prompt builder must efficiently format skills for LLM consumption. Tool execution requires handling within the streaming flow. The ownership model (private vs global skills) adds complexity to authorization. Name validation regex and description length constraints need careful implementation."
+		},
+		{
+			"taskId": 9,
+			"taskTitle": "Build Skills Management UI with Two-Column Layout and Editor",
+			"complexityScore": 5,
+			"recommendedSubtasks": 6,
+			"expansionPrompt": "Break down the skills UI into: 1) Create Zustand store for skills state with CRUD operations, 2) Build skill list sidebar with search and filter functionality, 3) Create skill editor form with React Hook Form + Zod validation, 4) Implement new skill dropdown with three creation paths (AI, manual, import), 5) Build confirmation dialogs for delete and share actions, 6) Create empty state and skill card components. Include form validation and responsive layout tests.",
+			"reasoning": "Standard CRUD UI with form validation patterns. The complexity comes from supporting three creation workflows and handling global skill indicators. The editor needs good UX for markdown instructions. Depends on skills backend being complete. Lower complexity than chat frontend because it's mostly synchronous CRUD operations."
+		},
+		{
+			"taskId": 10,
+			"taskTitle": "Implement Skill Building-Block Files with Upload, Storage, and LLM Tool",
+			"complexityScore": 6,
+			"recommendedSubtasks": 6,
+			"expansionPrompt": "Break down skill files into: 1) Create skill files service with Supabase Storage upload/download, 2) Build skill files router with upload, list, delete, and content endpoints, 3) Implement read_skill_file LLM tool with text/binary handling, 4) Update load_skill tool to include file listing in response, 5) Create file manager UI component with drag-and-drop upload, 6) Build file preview panel with content display and download. Include file type handling and RLS policy tests.",
+			"reasoning": "File handling adds complexity with MIME type detection, storage bucket management, and RLS policies. The read_skill_file tool needs to differentiate text from binary files. The preview panel needs to handle various file types gracefully. Integration with Supabase Storage requires proper signed URL generation."
+		},
+		{
+			"taskId": 11,
+			"taskTitle": "Build Docker Sandbox Manager for Secure Python Code Execution",
+			"complexityScore": 8,
+			"recommendedSubtasks": 7,
+			"expansionPrompt": "Break down the Docker sandbox into: 1) Create custom Docker image with pre-installed data science packages, 2) Implement SandboxManager class with container lifecycle management, 3) Create SandboxSession class with TTL tracking and variable persistence, 4) Implement code execution with streaming stdout/stderr, 5) Build security validation layer blocking dangerous operations, 6) Create background cleanup task for expired sessions, 7) Add docker-compose configuration for development. Include security policy and timeout enforcement tests.",
+			"reasoning": "Highest complexity task involving Docker container orchestration, security enforcement, and real-time streaming. Requires understanding Docker SDK, container networking restrictions, resource limits. Session persistence across executions is non-trivial. Security validation must be thorough without false positives. Background cleanup requires proper async patterns and app lifecycle hooks."
+		},
+		{
+			"taskId": 12,
+			"taskTitle": "Implement Code Execution API with SSE Streaming and File Handling",
+			"complexityScore": 7,
+			"recommendedSubtasks": 6,
+			"expansionPrompt": "Break down the code execution API into: 1) Create execute_code LLM tool definition with proper schema, 2) Implement tool execution handler with sandbox integration, 3) Build SSE event streaming for execution progress and output, 4) Create file collection and Supabase Storage upload for generated files, 5) Build code execution UI panel with terminal-style output, 6) Create file download cards with signed URL fetching. Include end-to-end execution flow tests.",
+			"reasoning": "Integrates the sandbox manager into the chat flow with proper SSE streaming. Must handle multiple event types (start, stdout, stderr, file, complete, error). Generated files need upload to storage and metadata persistence. The UI panel needs to handle streaming updates and file downloads. Complex interaction between frontend, backend, and Docker container."
+		},
+		{
+			"taskId": 13,
+			"taskTitle": "Implement Skills Open Standard Import/Export with ZIP Format",
+			"complexityScore": 5,
+			"recommendedSubtasks": 5,
+			"expansionPrompt": "Break down skills import/export into: 1) Create SKILL.md parser/generator utility for YAML frontmatter + markdown, 2) Implement file categorization logic (scripts/references/assets), 3) Build export endpoint generating ZIP with proper directory structure, 4) Implement import endpoint handling single and bulk imports with conflict detection, 5) Create import/export UI controls with results dialog. Include round-trip export→import tests.",
+			"reasoning": "File format conversion task with clear specifications from the open standard. YAML parsing and ZIP handling are well-supported in Python. The complexity is in handling edge cases: name conflicts, bulk imports, file categorization. Lower priority and lower complexity than core features."
+		},
+		{
+			"taskId": 14,
+			"taskTitle": "Implement Persistent Tool Memory with Result Storage and History Reconstruction",
+			"complexityScore": 6,
+			"recommendedSubtasks": 5,
+			"expansionPrompt": "Break down tool memory into: 1) Update message model to handle tool calls with results in JSONB, 2) Create tool memory service for storing and capping result sizes, 3) Implement history reconstruction producing correct LLM message format, 4) Update chat flow to persist tool results after execution, 5) Add result truncation with structure preservation for JSON. Include multi-turn conversation tests verifying AI can reference previous tool results.",
+			"reasoning": "Requires understanding the Anthropic message format deeply to properly reconstruct tool_use and tool_result sequences. The JSONB operations for storing results need atomic updates. Result capping with structure preservation is nuanced for JSON content. Must work correctly with all tool types (load_skill, execute_code, etc.)."
+		},
+		{
+			"taskId": 15,
+			"taskTitle": "Implement Documents Page Placeholder and Final Polish",
+			"complexityScore": 4,
+			"recommendedSubtasks": 5,
+			"expansionPrompt": "Break down final polish into: 1) Create Documents page placeholder with coming soon message, 2) Implement error boundaries and loading states for all routes, 3) Create empty state components for threads, messages, and skills, 4) Add toast notifications for user actions throughout the app, 5) Conduct responsive design audit and accessibility improvements. Include end-to-end flow testing and Lighthouse performance audit.",
+			"reasoning": "Polish task covering many small improvements rather than complex features. Error boundaries and loading states follow Next.js patterns. Empty states are straightforward UI components. The breadth of changes across the app adds some complexity, but individual changes are simple. Good candidate for cleanup and consistency improvements."
+		}
+	]
+}
