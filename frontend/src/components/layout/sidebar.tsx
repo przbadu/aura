@@ -10,6 +10,7 @@ import {
   PanelLeftClose,
   PanelLeft,
   Sparkles,
+  LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
@@ -20,6 +21,15 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useAuth } from "@/hooks/use-auth";
 
 const NAV_ITEMS = [
   {
@@ -49,6 +59,16 @@ interface SidebarProps {
 
 export function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const pathname = usePathname();
+  const { user, loading, signOut } = useAuth();
+
+  const userInitials = user?.user_metadata?.full_name
+    ? user.user_metadata.full_name
+        .split(" ")
+        .map((n: string) => n[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2)
+    : user?.email?.charAt(0).toUpperCase() ?? "?";
 
   return (
     <aside
@@ -130,9 +150,54 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
 
       {/* Bottom controls */}
       <div className="mt-auto border-t border-border/50 px-2 py-2">
+        {/* User menu */}
+        {!loading && user && (
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              className={cn(
+                "flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-sm transition-colors hover:bg-accent",
+                collapsed && "justify-center px-0"
+              )}
+            >
+              <Avatar size="sm">
+                <AvatarFallback className="text-[10px]">
+                  {userInitials}
+                </AvatarFallback>
+              </Avatar>
+              {!collapsed && (
+                <div className="flex-1 truncate text-left animate-in fade-in slide-in-from-left-2 duration-200">
+                  <p className="truncate text-xs font-medium text-foreground">
+                    {user.user_metadata?.full_name || "User"}
+                  </p>
+                  <p className="truncate text-[11px] text-muted-foreground">
+                    {user.email}
+                  </p>
+                </div>
+              )}
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              side={collapsed ? "right" : "top"}
+              align="start"
+              sideOffset={8}
+            >
+              <div className="px-1.5 py-1.5">
+                <p className="text-sm font-medium">
+                  {user.user_metadata?.full_name || "User"}
+                </p>
+                <p className="text-xs text-muted-foreground">{user.email}</p>
+              </div>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={signOut}>
+                <LogOut className="h-4 w-4" />
+                Sign out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+
         <div
           className={cn(
-            "flex items-center",
+            "flex items-center mt-1",
             collapsed ? "flex-col gap-1" : "justify-between"
           )}
         >
