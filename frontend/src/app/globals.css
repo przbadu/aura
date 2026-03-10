@@ -1,6 +1,49 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+@import "highlight.js/styles/github.css" layer(base);
+
+/* Override hljs background to be transparent (we use our own bg) */
+@layer base {
+  .hljs {
+    background: transparent !important;
+  }
+  .dark .hljs {
+    color: oklch(0.9 0.01 260);
+  }
+  .dark .hljs-keyword,
+  .dark .hljs-selector-tag,
+  .dark .hljs-literal,
+  .dark .hljs-section,
+  .dark .hljs-link {
+    color: oklch(0.72 0.16 265);
+  }
+  .dark .hljs-string,
+  .dark .hljs-title,
+  .dark .hljs-name,
+  .dark .hljs-type,
+  .dark .hljs-attribute,
+  .dark .hljs-symbol,
+  .dark .hljs-bullet,
+  .dark .hljs-addition,
+  .dark .hljs-variable,
+  .dark .hljs-template-tag,
+  .dark .hljs-template-variable {
+    color: oklch(0.75 0.15 150);
+  }
+  .dark .hljs-comment,
+  .dark .hljs-quote,
+  .dark .hljs-deletion,
+  .dark .hljs-meta {
+    color: oklch(0.55 0.02 260);
+  }
+  .dark .hljs-number,
+  .dark .hljs-regexp,
+  .dark .hljs-literal,
+  .dark .hljs-built_in {
+    color: oklch(0.75 0.14 50);
+  }
+}
 
 @custom-variant dark (&:is(.dark *));
 
