@@ -80,6 +80,86 @@ export async function fetchMessages(threadId: string): Promise<Message[]> {
   return res.json();
 }
 
+// Skills
+
+export interface Skill {
+  id: string;
+  name: string;
+  description: string;
+  instructions: string;
+  enabled: boolean;
+  license: string | null;
+  metadata: Record<string, unknown> | null;
+  user_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateSkillPayload {
+  name: string;
+  description: string;
+  instructions: string;
+  enabled?: boolean;
+}
+
+export interface UpdateSkillPayload {
+  name?: string;
+  description?: string;
+  instructions?: string;
+  enabled?: boolean;
+}
+
+export async function fetchSkills(): Promise<Skill[]> {
+  const headers = await getAuthHeaders();
+  const res = await fetch(`${API_URL}/api/skills`, { headers });
+  if (!res.ok) throw new Error("Failed to fetch skills");
+  return res.json();
+}
+
+export async function createSkill(payload: CreateSkillPayload): Promise<Skill> {
+  const headers = await getAuthHeaders();
+  const res = await fetch(`${API_URL}/api/skills`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error("Failed to create skill");
+  return res.json();
+}
+
+export async function updateSkill(
+  id: string,
+  payload: UpdateSkillPayload
+): Promise<Skill> {
+  const headers = await getAuthHeaders();
+  const res = await fetch(`${API_URL}/api/skills/${id}`, {
+    method: "PATCH",
+    headers,
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error("Failed to update skill");
+  return res.json();
+}
+
+export async function deleteSkill(id: string): Promise<void> {
+  const headers = await getAuthHeaders();
+  const res = await fetch(`${API_URL}/api/skills/${id}`, {
+    method: "DELETE",
+    headers,
+  });
+  if (!res.ok) throw new Error("Failed to delete skill");
+}
+
+export async function toggleSkillShare(id: string): Promise<Skill> {
+  const headers = await getAuthHeaders();
+  const res = await fetch(`${API_URL}/api/skills/${id}/share`, {
+    method: "PATCH",
+    headers,
+  });
+  if (!res.ok) throw new Error("Failed to toggle skill sharing");
+  return res.json();
+}
+
 export async function streamChat(
   message: string,
   threadId?: string,
