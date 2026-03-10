@@ -12,6 +12,7 @@ dependencies = [
     "anthropic>=0.42.0",
     "sse-starlette>=2.2.0",
     "python-multipart>=0.0.18",
+    "pyyaml>=6.0",
 ]
 
 [project.optional-dependencies]
