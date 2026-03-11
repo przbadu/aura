@@ -10,15 +10,15 @@ class MessageCreate(BaseModel):
 
 class ChatRequest(BaseModel):
     thread_id: Optional[str] = Field(None, description="Existing thread ID")
-    message: str = Field(..., description="User message content")
+    message: str = Field(..., max_length=32000, description="User message content")
 
 
 class ThreadCreate(BaseModel):
-    title: Optional[str] = Field(None, description="Thread title")
+    title: Optional[str] = Field(None, max_length=200, description="Thread title")
 
 
 class ThreadUpdate(BaseModel):
-    title: str = Field(..., description="New thread title")
+    title: str = Field(..., max_length=200, description="New thread title")
 
 
 class ThreadResponse(BaseModel):

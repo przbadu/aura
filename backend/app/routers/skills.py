@@ -12,10 +12,14 @@ from app.utils.skill_standard import categorize_file, generate_skill_md, parse_s
 router = APIRouter(tags=["skills"])
 
 
+def _get_client(user):
+    return get_supabase_client(getattr(user, "access_token", None))
+
+
 @router.post("/skills", response_model=SkillResponse, status_code=status.HTTP_201_CREATED)
 async def create_skill(body: SkillCreate, user=Depends(get_current_user)):
     """Create a new skill for the current user."""
-    supabase = get_supabase_client()
+    supabase = _get_client(user)
     data = {
         "user_id": user.id,
         "name": body.name,
@@ -35,7 +39,7 @@ async def create_skill(body: SkillCreate, user=Depends(get_current_user)):
 @router.get("/skills", response_model=list[SkillResponse])
 async def list_skills(user=Depends(get_current_user)):
     """List skills visible to the current user (own + global where user_id IS NULL)."""
-    supabase = get_supabase_client()
+    supabase = _get_client(user)
     result = (
         supabase.table("skills")
         .select("*")
@@ -49,7 +53,7 @@ async def list_skills(user=Depends(get_current_user)):
 @router.get("/skills/{skill_id}", response_model=SkillResponse)
 async def get_skill(skill_id: str, user=Depends(get_current_user)):
     """Get a single skill by ID (must be own or global)."""
-    supabase = get_supabase_client()
+    supabase = _get_client(user)
     result = (
         supabase.table("skills")
         .select("*")
@@ -67,7 +71,7 @@ async def update_skill(
     skill_id: str, body: SkillUpdate, user=Depends(get_current_user)
 ):
     """Update a skill (own only)."""
-    supabase = get_supabase_client()
+    supabase = _get_client(user)
     # Verify ownership
     existing = (
         supabase.table("skills")
@@ -95,7 +99,7 @@ async def update_skill(
 @router.delete("/skills/{skill_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_skill(skill_id: str, user=Depends(get_current_user)):
     """Delete a skill (own only)."""
-    supabase = get_supabase_client()
+    supabase = _get_client(user)
     # Verify ownership
     existing = (
         supabase.table("skills")
@@ -116,8 +120,11 @@ async def delete_skill(skill_id: str, user=Depends(get_current_user)):
 async def toggle_share_skill(
     skill_id: str, body: SkillShareToggle, user=Depends(get_current_user)
 ):
-    """Toggle a skill between global (user_id=NULL) and private (user_id=current user)."""
-    supabase = get_supabase_client()
+    """Toggle a skill between global (user_id=NULL) and private (user_id=current user).
+
+    Only the skill owner can share/unshare. Users cannot claim other users' global skills.
+    """
+    supabase = _get_client(user)
     # Fetch skill - must be owned by user or already global
     result = (
         supabase.table("skills")
@@ -130,15 +137,28 @@ async def toggle_share_skill(
         raise HTTPException(status_code=404, detail="Skill not found")
 
     skill = result.data[0]
-    # Toggle: if currently owned by user, make global; if global, claim ownership
+
     if skill["user_id"] is None:
+        # Global skill: only the original sharer (stored in metadata) can reclaim
+        original_owner = (skill.get("metadata") or {}).get("shared_by")
+        if original_owner != user.id:
+            raise HTTPException(
+                status_code=403,
+                detail="Only the original owner can reclaim a global skill",
+            )
         new_user_id = user.id
+        # Remove shared_by from metadata on reclaim
+        metadata = dict(skill.get("metadata") or {})
+        metadata.pop("shared_by", None)
     else:
+        # Private skill owned by current user: make it global, store who shared it
         new_user_id = None
+        metadata = dict(skill.get("metadata") or {})
+        metadata["shared_by"] = user.id
 
     updated = (
         supabase.table("skills")
-        .update({"user_id": new_user_id})
+        .update({"user_id": new_user_id, "metadata": metadata})
         .eq("id", skill_id)
         .execute()
     )
@@ -148,7 +168,7 @@ async def toggle_share_skill(
 @router.get("/skills/{skill_id}/export")
 async def export_skill(skill_id: str, user=Depends(get_current_user)):
     """Export a skill as a ZIP archive containing SKILL.md and associated files."""
-    supabase = get_supabase_client()
+    supabase = _get_client(user)
 
     # Fetch skill
     result = (
@@ -227,7 +247,7 @@ async def import_skill(file: UploadFile, user=Depends(get_current_user)):
         raise HTTPException(status_code=400, detail=str(e))
 
     # Create skill in database
-    supabase = get_supabase_client()
+    supabase = _get_client(user)
     data = {
         "user_id": user.id,
         "name": parsed["name"],

@@ -6,10 +6,15 @@ from app.models.chat import ThreadCreate, ThreadUpdate, ThreadResponse, MessageR
 router = APIRouter(tags=["threads"])
 
 
+def _get_client(user):
+    """Get an authenticated Supabase client for the current user."""
+    return get_supabase_client(getattr(user, "access_token", None))
+
+
 @router.post("/threads", response_model=ThreadResponse, status_code=status.HTTP_201_CREATED)
 async def create_thread(body: ThreadCreate, user=Depends(get_current_user)):
     """Create a new chat thread."""
-    supabase = get_supabase_client()
+    supabase = _get_client(user)
     data = {"user_id": user.id}
     if body.title:
         data["title"] = body.title
@@ -23,7 +28,7 @@ async def create_thread(body: ThreadCreate, user=Depends(get_current_user)):
 @router.get("/threads", response_model=list[ThreadResponse])
 async def list_threads(user=Depends(get_current_user)):
     """List all threads for the current user, ordered by most recently updated."""
-    supabase = get_supabase_client()
+    supabase = _get_client(user)
     result = (
         supabase.table("threads")
         .select("*")
@@ -37,7 +42,7 @@ async def list_threads(user=Depends(get_current_user)):
 @router.get("/threads/{thread_id}", response_model=ThreadResponse)
 async def get_thread(thread_id: str, user=Depends(get_current_user)):
     """Get a specific thread by ID."""
-    supabase = get_supabase_client()
+    supabase = _get_client(user)
     result = (
         supabase.table("threads")
         .select("*")
@@ -55,8 +60,7 @@ async def update_thread(
     thread_id: str, body: ThreadUpdate, user=Depends(get_current_user)
 ):
     """Update a thread's title."""
-    supabase = get_supabase_client()
-    # Verify ownership
+    supabase = _get_client(user)
     existing = (
         supabase.table("threads")
         .select("id")
@@ -79,8 +83,7 @@ async def update_thread(
 @router.delete("/threads/{thread_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_thread(thread_id: str, user=Depends(get_current_user)):
     """Delete a thread and its messages."""
-    supabase = get_supabase_client()
-    # Verify ownership
+    supabase = _get_client(user)
     existing = (
         supabase.table("threads")
         .select("id")
@@ -91,16 +94,14 @@ async def delete_thread(thread_id: str, user=Depends(get_current_user)):
     if not existing.data:
         raise HTTPException(status_code=404, detail="Thread not found")
 
-    # Delete messages first, then thread
-    supabase.table("messages").delete().eq("thread_id", thread_id).execute()
-    supabase.table("threads").delete().eq("id", thread_id).execute()
+    supabase.table("messages").delete().eq("thread_id", thread_id).eq("user_id", user.id).execute()
+    supabase.table("threads").delete().eq("id", thread_id).eq("user_id", user.id).execute()
 
 
 @router.get("/threads/{thread_id}/messages", response_model=list[MessageResponse])
 async def get_thread_messages(thread_id: str, user=Depends(get_current_user)):
     """Get all messages for a thread, ordered by creation time."""
-    supabase = get_supabase_client()
-    # Verify thread ownership
+    supabase = _get_client(user)
     existing = (
         supabase.table("threads")
         .select("id")

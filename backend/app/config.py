@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     # Legacy key (still supported if provider is "anthropic")
     anthropic_api_key: str = ""
 
-    cors_origins: list[str] = ["http://localhost:3000", "http://localhost:3001"]
+    cors_origins: list[str] = ["http://localhost:3000", "http://localhost:5100"]
     debug: bool = False
     sandbox_enabled: bool = False
 

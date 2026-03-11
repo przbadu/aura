@@ -7,9 +7,22 @@ async function getAuthHeaders() {
   const {
     data: { session },
   } = await supabase.auth.getSession();
+
+  let token = session?.access_token || "";
+
+  // Fallback: if getSession() returns no token, try refreshing
+  if (!token) {
+    const { data } = await supabase.auth.refreshSession();
+    token = data.session?.access_token || "";
+  }
+
+  if (!token) {
+    throw new Error("Not authenticated");
+  }
+
   return {
     "Content-Type": "application/json",
-    Authorization: `Bearer ${session?.access_token || ""}`,
+    Authorization: `Bearer ${token}`,
   };
 }
 
@@ -165,17 +178,11 @@ export async function streamChat(
   threadId?: string,
   onEvent?: (event: { type: string; data: string }) => void
 ): Promise<void> {
-  const supabase = createClient();
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
+  const headers = await getAuthHeaders();
 
   const res = await fetch(`${API_URL}/api/chat`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${session?.access_token || ""}`,
-    },
+    headers,
     body: JSON.stringify({ message, thread_id: threadId }),
   });
 
@@ -185,6 +192,7 @@ export async function streamChat(
   const reader = res.body.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
+  let currentEvent = "";
 
   while (true) {
     const { done, value } = await reader.read();
@@ -196,16 +204,18 @@ export async function streamChat(
 
     for (const line of lines) {
       if (line.startsWith("event: ")) {
+        currentEvent = line.slice(7).trim();
         continue;
       }
       if (line.startsWith("data: ")) {
-        const data = line.slice(6);
+        const rawData = line.slice(6);
         try {
-          const parsed = JSON.parse(data);
-          onEvent?.(parsed);
+          const parsed = JSON.parse(rawData);
+          onEvent?.({ type: currentEvent || "unknown", data: parsed.content ?? "", ...parsed });
         } catch {
-          onEvent?.({ type: "text_delta", data });
+          onEvent?.({ type: currentEvent || "text_delta", data: rawData });
         }
+        currentEvent = "";
       }
     }
   }

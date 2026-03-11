@@ -10,6 +10,7 @@ interface ChatState {
   streamingContent: string;
   isLoadingThreads: boolean;
   isLoadingMessages: boolean;
+  error: string | null;
 
   // Thread actions
   fetchThreads: () => Promise<void>;
@@ -24,6 +25,7 @@ interface ChatState {
   appendStreamContent: (content: string) => void;
   setIsStreaming: (streaming: boolean) => void;
   addMessage: (message: Message) => void;
+  clearError: () => void;
 }
 
 export const useChatStore = create<ChatState>((set, get) => ({
@@ -34,14 +36,15 @@ export const useChatStore = create<ChatState>((set, get) => ({
   streamingContent: "",
   isLoadingThreads: false,
   isLoadingMessages: false,
+  error: null,
 
   fetchThreads: async () => {
     set({ isLoadingThreads: true });
     try {
       const threads = await api.fetchThreads();
       set({ threads, isLoadingThreads: false });
-    } catch {
-      set({ isLoadingThreads: false });
+    } catch (e) {
+      set({ isLoadingThreads: false, error: e instanceof Error ? e.message : "Failed to load threads" });
     }
   },
 
@@ -61,8 +64,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
       try {
         const messages = await api.fetchMessages(id);
         set({ messages, isLoadingMessages: false });
-      } catch {
-        set({ isLoadingMessages: false });
+      } catch (e) {
+        set({ isLoadingMessages: false, error: e instanceof Error ? e.message : "Failed to load messages" });
       }
     }
   },
@@ -91,7 +94,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
     // Add user message optimistically
     const tempUserMsg: Message = {
-      id: `temp-${Date.now()}`,
+      id: crypto.randomUUID(),
       thread_id: activeThreadId || "",
       role: "user",
       content,
@@ -102,24 +105,26 @@ export const useChatStore = create<ChatState>((set, get) => ({
       messages: [...state.messages, tempUserMsg],
       isStreaming: true,
       streamingContent: "",
+      error: null,
     }));
 
     try {
       let threadId = activeThreadId;
       let fullContent = "";
+      let finalized = false;
 
       await api.streamChat(content, threadId || undefined, (event) => {
-        if (event.type === "thread_created" && "thread_id" in event) {
+        if (event.type === "message_start" && "thread_id" in event) {
           threadId = (event as unknown as { thread_id: string }).thread_id;
           set({ activeThreadId: threadId });
-          // Refresh threads to show new one
           get().fetchThreads();
         } else if (event.type === "text_delta") {
           fullContent += event.data;
           set({ streamingContent: fullContent });
-        } else if (event.type === "message_end") {
+        } else if (event.type === "message_end" && !finalized) {
+          finalized = true;
           const assistantMsg: Message = {
-            id: `msg-${Date.now()}`,
+            id: crypto.randomUUID(),
             thread_id: threadId || "",
             role: "assistant",
             content: fullContent,
@@ -131,11 +136,36 @@ export const useChatStore = create<ChatState>((set, get) => ({
             isStreaming: false,
             streamingContent: "",
           }));
+        } else if (event.type === "error") {
+          finalized = true;
+          set({ isStreaming: false, streamingContent: "", error: "Failed to get AI response" });
         }
       });
+
+      // If stream ended without message_end event, finalize
+      if (!finalized && fullContent) {
+        const assistantMsg: Message = {
+          id: crypto.randomUUID(),
+          thread_id: threadId || "",
+          role: "assistant",
+          content: fullContent,
+          tool_calls: [],
+          created_at: new Date().toISOString(),
+        };
+        set((state) => ({
+          messages: [...state.messages, assistantMsg],
+          isStreaming: false,
+          streamingContent: "",
+        }));
+      } else if (!finalized) {
+        set({ isStreaming: false, streamingContent: "" });
+      }
     } catch (error) {
-      set({ isStreaming: false, streamingContent: "" });
-      console.error("Failed to send message:", error);
+      set({
+        isStreaming: false,
+        streamingContent: "",
+        error: error instanceof Error ? error.message : "Failed to send message",
+      });
     }
   },
 
@@ -145,4 +175,5 @@ export const useChatStore = create<ChatState>((set, get) => ({
   setIsStreaming: (streaming) => set({ isStreaming: streaming }),
   addMessage: (message) =>
     set((state) => ({ messages: [...state.messages, message] })),
+  clearError: () => set({ error: null }),
 }));

@@ -7,10 +7,14 @@ router = APIRouter(tags=["sandbox"])
 BUCKET_NAME = "sandbox-files"
 
 
+def _get_client(user):
+    return get_supabase_client(getattr(user, "access_token", None))
+
+
 @router.get("/sandbox/executions/{execution_id}/files")
 async def list_execution_files(execution_id: str, user=Depends(get_current_user)):
     """List files produced by a code execution."""
-    supabase = get_supabase_client()
+    supabase = _get_client(user)
 
     # Verify the execution belongs to this user
     execution = (
@@ -36,7 +40,7 @@ async def list_execution_files(execution_id: str, user=Depends(get_current_user)
 @router.get("/sandbox/files/{file_id}/download")
 async def download_execution_file(file_id: str, user=Depends(get_current_user)):
     """Get a signed download URL for a file produced by code execution."""
-    supabase = get_supabase_client()
+    supabase = _get_client(user)
 
     # Fetch file record and verify ownership via execution
     file_record = (

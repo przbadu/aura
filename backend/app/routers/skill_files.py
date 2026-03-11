@@ -5,6 +5,11 @@ from app.db.supabase import get_supabase_client
 
 router = APIRouter(tags=["skill-files"])
 
+
+def _get_client(user):
+    return get_supabase_client(getattr(user, "access_token", None))
+
+
 BUCKET_NAME = "skill-files"
 TEXT_MIME_PREFIXES = ("text/", "application/json", "application/xml", "application/javascript")
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
@@ -55,7 +60,7 @@ async def upload_skill_file(
     user=Depends(get_current_user),
 ):
     """Upload a file to a skill. Stores in Supabase Storage and records metadata."""
-    supabase = get_supabase_client()
+    supabase = _get_client(user)
     _verify_skill_ownership(supabase, skill_id, user.id)
 
     content = await file.read()
@@ -91,6 +96,7 @@ async def upload_skill_file(
         "storage_path": storage_path,
         "file_size": len(content),
         "mime_type": mime_type,
+        "user_id": user.id,
     }
 
     if existing.data:
@@ -112,7 +118,7 @@ async def upload_skill_file(
 @router.get("/skills/{skill_id}/files")
 async def list_skill_files(skill_id: str, user=Depends(get_current_user)):
     """List all files attached to a skill."""
-    supabase = get_supabase_client()
+    supabase = _get_client(user)
     _verify_skill_access(supabase, skill_id, user.id)
 
     result = (
@@ -131,7 +137,7 @@ async def list_skill_files(skill_id: str, user=Depends(get_current_user)):
 )
 async def delete_skill_file(skill_id: str, file_id: str, user=Depends(get_current_user)):
     """Delete a file from a skill."""
-    supabase = get_supabase_client()
+    supabase = _get_client(user)
     _verify_skill_ownership(supabase, skill_id, user.id)
 
     # Fetch file record
@@ -162,7 +168,7 @@ async def get_skill_file_content(
     skill_id: str, file_id: str, user=Depends(get_current_user)
 ):
     """Get file content (inline for text) or a signed download URL (for binary)."""
-    supabase = get_supabase_client()
+    supabase = _get_client(user)
     _verify_skill_access(supabase, skill_id, user.id)
 
     file_record = (

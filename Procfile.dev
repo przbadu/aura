@@ -1,2 +1,2 @@
 backend: cd backend && .venv/bin/uvicorn app.main:app --reload --port 8001
-frontend: cd frontend && npm run dev
+frontend: cd frontend && npm run dev -- --port 5100
