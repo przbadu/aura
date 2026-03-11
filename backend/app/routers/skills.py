@@ -222,6 +222,12 @@ async def export_skill(skill_id: str, user=Depends(get_current_user)):
     )
 
 
+# Limits for ZIP upload protection
+MAX_UPLOAD_SIZE = 10 * 1024 * 1024  # 10 MB compressed
+MAX_UNCOMPRESSED_SIZE = 50 * 1024 * 1024  # 50 MB total uncompressed
+MAX_FILE_COUNT = 100  # max files inside the ZIP
+
+
 @router.post("/skills/import", response_model=SkillResponse, status_code=status.HTTP_201_CREATED)
 async def import_skill(file: UploadFile, user=Depends(get_current_user)):
     """Import a skill from a ZIP archive containing SKILL.md."""
@@ -229,13 +235,39 @@ async def import_skill(file: UploadFile, user=Depends(get_current_user)):
         raise HTTPException(status_code=400, detail="File must be a .zip archive")
 
     content = await file.read()
+
+    # Check compressed size
+    if len(content) > MAX_UPLOAD_SIZE:
+        raise HTTPException(
+            status_code=413,
+            detail=f"Upload too large. Maximum size is {MAX_UPLOAD_SIZE // (1024 * 1024)} MB",
+        )
+
     try:
         zf = zipfile.ZipFile(io.BytesIO(content))
     except zipfile.BadZipFile:
         raise HTTPException(status_code=400, detail="Invalid ZIP file")
 
+    # ZIP bomb protection: check total uncompressed size and file count
+    entries = zf.infolist()
+    if len(entries) > MAX_FILE_COUNT:
+        zf.close()
+        raise HTTPException(
+            status_code=400,
+            detail=f"ZIP contains too many files (max {MAX_FILE_COUNT})",
+        )
+
+    total_uncompressed = sum(info.file_size for info in entries)
+    if total_uncompressed > MAX_UNCOMPRESSED_SIZE:
+        zf.close()
+        raise HTTPException(
+            status_code=413,
+            detail=f"ZIP uncompressed content too large. Maximum is {MAX_UNCOMPRESSED_SIZE // (1024 * 1024)} MB",
+        )
+
     # Find and parse SKILL.md
     if "SKILL.md" not in zf.namelist():
+        zf.close()
         raise HTTPException(
             status_code=400, detail="ZIP must contain a SKILL.md file"
         )
@@ -244,6 +276,7 @@ async def import_skill(file: UploadFile, user=Depends(get_current_user)):
     try:
         parsed = parse_skill_md(skill_md_content)
     except ValueError as e:
+        zf.close()
         raise HTTPException(status_code=400, detail=str(e))
 
     # Create skill in database
@@ -260,6 +293,7 @@ async def import_skill(file: UploadFile, user=Depends(get_current_user)):
     }
     result = supabase.table("skills").insert(data).execute()
     if not result.data:
+        zf.close()
         raise HTTPException(status_code=500, detail="Failed to import skill")
 
     skill = result.data[0]

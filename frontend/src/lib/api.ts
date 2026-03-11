@@ -45,7 +45,7 @@ export interface Message {
 
 export async function fetchThreads(): Promise<Thread[]> {
   const headers = await getAuthHeaders();
-  const res = await fetch(`${API_URL}/api/threads`, { headers });
+  const res = await fetch(`${API_URL}/api/threads`, { headers, signal: AbortSignal.timeout(30000) });
   if (!res.ok) throw new Error("Failed to fetch threads");
   return res.json();
 }
@@ -56,6 +56,7 @@ export async function createThread(title?: string): Promise<Thread> {
     method: "POST",
     headers,
     body: JSON.stringify({ title: title || "New Chat" }),
+    signal: AbortSignal.timeout(30000),
   });
   if (!res.ok) throw new Error("Failed to create thread");
   return res.json();
@@ -70,6 +71,7 @@ export async function updateThread(
     method: "PATCH",
     headers,
     body: JSON.stringify({ title }),
+    signal: AbortSignal.timeout(30000),
   });
   if (!res.ok) throw new Error("Failed to update thread");
   return res.json();
@@ -80,6 +82,7 @@ export async function deleteThread(id: string): Promise<void> {
   const res = await fetch(`${API_URL}/api/threads/${id}`, {
     method: "DELETE",
     headers,
+    signal: AbortSignal.timeout(30000),
   });
   if (!res.ok) throw new Error("Failed to delete thread");
 }
@@ -88,6 +91,7 @@ export async function fetchMessages(threadId: string): Promise<Message[]> {
   const headers = await getAuthHeaders();
   const res = await fetch(`${API_URL}/api/threads/${threadId}/messages`, {
     headers,
+    signal: AbortSignal.timeout(30000),
   });
   if (!res.ok) throw new Error("Failed to fetch messages");
   return res.json();
@@ -124,7 +128,7 @@ export interface UpdateSkillPayload {
 
 export async function fetchSkills(): Promise<Skill[]> {
   const headers = await getAuthHeaders();
-  const res = await fetch(`${API_URL}/api/skills`, { headers });
+  const res = await fetch(`${API_URL}/api/skills`, { headers, signal: AbortSignal.timeout(30000) });
   if (!res.ok) throw new Error("Failed to fetch skills");
   return res.json();
 }
@@ -135,6 +139,7 @@ export async function createSkill(payload: CreateSkillPayload): Promise<Skill> {
     method: "POST",
     headers,
     body: JSON.stringify(payload),
+    signal: AbortSignal.timeout(30000),
   });
   if (!res.ok) throw new Error("Failed to create skill");
   return res.json();
@@ -149,6 +154,7 @@ export async function updateSkill(
     method: "PATCH",
     headers,
     body: JSON.stringify(payload),
+    signal: AbortSignal.timeout(30000),
   });
   if (!res.ok) throw new Error("Failed to update skill");
   return res.json();
@@ -159,6 +165,7 @@ export async function deleteSkill(id: string): Promise<void> {
   const res = await fetch(`${API_URL}/api/skills/${id}`, {
     method: "DELETE",
     headers,
+    signal: AbortSignal.timeout(30000),
   });
   if (!res.ok) throw new Error("Failed to delete skill");
 }
@@ -168,6 +175,7 @@ export async function toggleSkillShare(id: string): Promise<Skill> {
   const res = await fetch(`${API_URL}/api/skills/${id}/share`, {
     method: "PATCH",
     headers,
+    signal: AbortSignal.timeout(30000),
   });
   if (!res.ok) throw new Error("Failed to toggle skill sharing");
   return res.json();
@@ -184,6 +192,7 @@ export async function streamChat(
     method: "POST",
     headers,
     body: JSON.stringify({ message, thread_id: threadId }),
+    signal: AbortSignal.timeout(120000),
   });
 
   if (!res.ok) throw new Error("Failed to start chat");

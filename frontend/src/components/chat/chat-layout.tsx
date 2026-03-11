@@ -12,13 +12,15 @@ import {
   SheetTrigger,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { PanelLeftClose, PanelLeftOpen, Menu } from "lucide-react";
+import { PanelLeftClose, PanelLeftOpen, Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function ChatLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   const fetchThreads = useChatStore((s) => s.fetchThreads);
+  const error = useChatStore((s) => s.error);
+  const clearError = useChatStore((s) => s.clearError);
 
   // Initialize by fetching threads
   useEffect(() => {
@@ -85,6 +87,20 @@ export function ChatLayout() {
             </Button>
           )}
         </div>
+
+        {/* Error banner */}
+        {error && (
+          <div className="flex items-center gap-2 bg-destructive/10 border-b border-destructive/20 px-4 py-2 text-sm text-destructive">
+            <span className="flex-1">{error}</span>
+            <button
+              onClick={clearError}
+              className="shrink-0 rounded p-0.5 hover:bg-destructive/20"
+              aria-label="Dismiss error"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        )}
 
         {/* Messages */}
         <div className="flex flex-1 flex-col overflow-hidden">

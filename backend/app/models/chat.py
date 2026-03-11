@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import Any, Optional
 from pydantic import BaseModel, Field
 
 
@@ -33,5 +33,5 @@ class MessageResponse(BaseModel):
     thread_id: str
     role: str
     content: str
-    tool_calls: Optional[dict] = None
+    tool_calls: Optional[list[Any]] = None
     created_at: datetime

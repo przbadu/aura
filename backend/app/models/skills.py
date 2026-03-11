@@ -6,7 +6,7 @@ import re
 class SkillCreate(BaseModel):
     name: str = Field(..., max_length=64)
     description: str = Field(..., min_length=20, max_length=1024)
-    instructions: str = ""
+    instructions: str = Field("", max_length=50000)
     enabled: bool = True
     license: Optional[str] = None
     compatibility: Optional[str] = None
@@ -23,9 +23,9 @@ class SkillCreate(BaseModel):
 
 
 class SkillUpdate(BaseModel):
-    name: Optional[str] = None
-    description: Optional[str] = None
-    instructions: Optional[str] = None
+    name: Optional[str] = Field(None, max_length=64)
+    description: Optional[str] = Field(None, min_length=20, max_length=1024)
+    instructions: Optional[str] = Field(None, max_length=50000)
     enabled: Optional[bool] = None
     license: Optional[str] = None
     compatibility: Optional[str] = None

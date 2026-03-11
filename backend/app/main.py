@@ -41,4 +41,14 @@ app.include_router(sandbox.router, prefix="/api")
 
 @app.get("/health")
 async def health_check():
-    return {"status": "healthy", "version": "0.1.0"}
+    checks = {"api": "ok"}
+    try:
+        from app.db.supabase import get_supabase_client
+        client = get_supabase_client()
+        client.table("threads").select("id", count="exact").limit(0).execute()
+        checks["database"] = "ok"
+    except Exception:
+        checks["database"] = "error"
+
+    overall = "healthy" if all(v == "ok" for v in checks.values()) else "degraded"
+    return {"status": overall, "version": "0.1.0", "checks": checks}
