@@ -16,11 +16,11 @@ class Settings(BaseSettings):
     # Legacy key (still supported if provider is "anthropic")
     anthropic_api_key: str = ""
 
-    cors_origins: list[str] = ["http://localhost:3000"]
+    cors_origins: list[str] = ["http://localhost:3000", "http://localhost:3001"]
     debug: bool = False
     sandbox_enabled: bool = False
 
-    model_config = {"env_file": "../.env", "env_file_encoding": "utf-8"}
+    model_config = {"env_file": "../.env", "env_file_encoding": "utf-8", "extra": "ignore"}
 
 
 settings = Settings()
