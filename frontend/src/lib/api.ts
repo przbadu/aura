@@ -2,15 +2,17 @@ import { createClient } from "@/lib/supabase/client";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
-async function getAuthHeaders() {
+async function getAuthHeaders(forceRefresh = false) {
   const supabase = createClient();
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
 
-  let token = session?.access_token || "";
+  let token = "";
 
-  // Fallback: if getSession() returns no token, try refreshing
+  if (!forceRefresh) {
+    const { data: { session } } = await supabase.auth.getSession();
+    token = session?.access_token || "";
+  }
+
+  // Fallback: if getSession() returns no token or forced refresh, try refreshing
   if (!token) {
     const { data } = await supabase.auth.refreshSession();
     token = data.session?.access_token || "";
@@ -24,6 +26,31 @@ async function getAuthHeaders() {
     "Content-Type": "application/json",
     Authorization: `Bearer ${token}`,
   };
+}
+
+async function fetchWithAuth(
+  url: string,
+  options: RequestInit = {},
+  timeout = 30000
+): Promise<Response> {
+  const headers = await getAuthHeaders();
+  const res = await fetch(url, {
+    ...options,
+    headers: { ...headers, ...options.headers },
+    signal: AbortSignal.timeout(timeout),
+  });
+
+  // Retry once with refreshed token on 401
+  if (res.status === 401) {
+    const freshHeaders = await getAuthHeaders(true);
+    return fetch(url, {
+      ...options,
+      headers: { ...freshHeaders, ...options.headers },
+      signal: AbortSignal.timeout(timeout),
+    });
+  }
+
+  return res;
 }
 
 export interface Thread {
@@ -44,19 +71,15 @@ export interface Message {
 }
 
 export async function fetchThreads(): Promise<Thread[]> {
-  const headers = await getAuthHeaders();
-  const res = await fetch(`${API_URL}/api/threads`, { headers, signal: AbortSignal.timeout(30000) });
+  const res = await fetchWithAuth(`${API_URL}/api/threads`);
   if (!res.ok) throw new Error("Failed to fetch threads");
   return res.json();
 }
 
 export async function createThread(title?: string): Promise<Thread> {
-  const headers = await getAuthHeaders();
-  const res = await fetch(`${API_URL}/api/threads`, {
+  const res = await fetchWithAuth(`${API_URL}/api/threads`, {
     method: "POST",
-    headers,
     body: JSON.stringify({ title: title || "New Chat" }),
-    signal: AbortSignal.timeout(30000),
   });
   if (!res.ok) throw new Error("Failed to create thread");
   return res.json();
@@ -66,33 +89,23 @@ export async function updateThread(
   id: string,
   title: string
 ): Promise<Thread> {
-  const headers = await getAuthHeaders();
-  const res = await fetch(`${API_URL}/api/threads/${id}`, {
+  const res = await fetchWithAuth(`${API_URL}/api/threads/${id}`, {
     method: "PATCH",
-    headers,
     body: JSON.stringify({ title }),
-    signal: AbortSignal.timeout(30000),
   });
   if (!res.ok) throw new Error("Failed to update thread");
   return res.json();
 }
 
 export async function deleteThread(id: string): Promise<void> {
-  const headers = await getAuthHeaders();
-  const res = await fetch(`${API_URL}/api/threads/${id}`, {
+  const res = await fetchWithAuth(`${API_URL}/api/threads/${id}`, {
     method: "DELETE",
-    headers,
-    signal: AbortSignal.timeout(30000),
   });
   if (!res.ok) throw new Error("Failed to delete thread");
 }
 
 export async function fetchMessages(threadId: string): Promise<Message[]> {
-  const headers = await getAuthHeaders();
-  const res = await fetch(`${API_URL}/api/threads/${threadId}/messages`, {
-    headers,
-    signal: AbortSignal.timeout(30000),
-  });
+  const res = await fetchWithAuth(`${API_URL}/api/threads/${threadId}/messages`);
   if (!res.ok) throw new Error("Failed to fetch messages");
   return res.json();
 }
@@ -127,19 +140,15 @@ export interface UpdateSkillPayload {
 }
 
 export async function fetchSkills(): Promise<Skill[]> {
-  const headers = await getAuthHeaders();
-  const res = await fetch(`${API_URL}/api/skills`, { headers, signal: AbortSignal.timeout(30000) });
+  const res = await fetchWithAuth(`${API_URL}/api/skills`);
   if (!res.ok) throw new Error("Failed to fetch skills");
   return res.json();
 }
 
 export async function createSkill(payload: CreateSkillPayload): Promise<Skill> {
-  const headers = await getAuthHeaders();
-  const res = await fetch(`${API_URL}/api/skills`, {
+  const res = await fetchWithAuth(`${API_URL}/api/skills`, {
     method: "POST",
-    headers,
     body: JSON.stringify(payload),
-    signal: AbortSignal.timeout(30000),
   });
   if (!res.ok) throw new Error("Failed to create skill");
   return res.json();
@@ -149,33 +158,24 @@ export async function updateSkill(
   id: string,
   payload: UpdateSkillPayload
 ): Promise<Skill> {
-  const headers = await getAuthHeaders();
-  const res = await fetch(`${API_URL}/api/skills/${id}`, {
+  const res = await fetchWithAuth(`${API_URL}/api/skills/${id}`, {
     method: "PATCH",
-    headers,
     body: JSON.stringify(payload),
-    signal: AbortSignal.timeout(30000),
   });
   if (!res.ok) throw new Error("Failed to update skill");
   return res.json();
 }
 
 export async function deleteSkill(id: string): Promise<void> {
-  const headers = await getAuthHeaders();
-  const res = await fetch(`${API_URL}/api/skills/${id}`, {
+  const res = await fetchWithAuth(`${API_URL}/api/skills/${id}`, {
     method: "DELETE",
-    headers,
-    signal: AbortSignal.timeout(30000),
   });
   if (!res.ok) throw new Error("Failed to delete skill");
 }
 
 export async function toggleSkillShare(id: string): Promise<Skill> {
-  const headers = await getAuthHeaders();
-  const res = await fetch(`${API_URL}/api/skills/${id}/share`, {
+  const res = await fetchWithAuth(`${API_URL}/api/skills/${id}/share`, {
     method: "PATCH",
-    headers,
-    signal: AbortSignal.timeout(30000),
   });
   if (!res.ok) throw new Error("Failed to toggle skill sharing");
   return res.json();
@@ -186,14 +186,10 @@ export async function streamChat(
   threadId?: string,
   onEvent?: (event: { type: string; data: string }) => void
 ): Promise<void> {
-  const headers = await getAuthHeaders();
-
-  const res = await fetch(`${API_URL}/api/chat`, {
+  const res = await fetchWithAuth(`${API_URL}/api/chat`, {
     method: "POST",
-    headers,
     body: JSON.stringify({ message, thread_id: threadId }),
-    signal: AbortSignal.timeout(120000),
-  });
+  }, 120000);
 
   if (!res.ok) throw new Error("Failed to start chat");
   if (!res.body) throw new Error("No response body");

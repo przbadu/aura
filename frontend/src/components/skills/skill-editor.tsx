@@ -54,7 +54,7 @@ export function SkillEditor() {
   const descValue = draft?.description ?? "";
   const instrValue = draft?.instructions ?? "";
   const isValidName =
-    nameValue.length > 0 && /^[a-z0-9]+(-[a-z0-9]+)*$/.test(nameValue);
+    nameValue.length > 0 && /^[a-z][a-z0-9]*(-[a-z0-9]+)*$/.test(nameValue);
   const isValidDesc = descValue.length >= 20 && descValue.length <= 1024;
   const canSave =
     isValidName && isValidDesc && instrValue.length > 0 && (isDirty || isCreating);
